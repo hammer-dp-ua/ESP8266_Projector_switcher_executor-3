@@ -543,9 +543,7 @@ void on_wifi_disconnected_task() {
    gpio_set_level(AP_CONNECTION_STATUS_LED_PIN, 0);
    gpio_set_level(SERVER_AVAILABILITY_STATUS_LED_PIN, 0);
 
-   vTaskDelete(tcp_server_task_g);
    delete_tcp_server();
-
    vTaskDelete(NULL);
 }
 
