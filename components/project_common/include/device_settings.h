@@ -9,10 +9,10 @@
 #ifdef TESTING
 static const char OWN_IP_ADDRESS[] = "192.168.0.90";
 static const char DEVICE_NAME[] = "Testing";
-#elif defined(ENTRANCE_PROJECTORS)
+#elif defined(ENTRANCE_PROJECTORS) // 4MB
 static const char OWN_IP_ADDRESS[] = "192.168.0.23";
 static const char DEVICE_NAME[] = "Entrance projectors";
-#elif defined(STOREHOUSE_PROJECTOR)
+#elif defined(STOREHOUSE_PROJECTOR) // 4MB
 static const char OWN_IP_ADDRESS[] = "192.168.0.22";
 static const char DEVICE_NAME[] = "Storehouse projector";
 #endif

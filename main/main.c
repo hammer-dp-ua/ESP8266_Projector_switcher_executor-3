@@ -305,7 +305,7 @@ static void send_status_info() {
       return;
    }
 
-   xTaskCreate(send_status_info_task, SEND_STATUS_INFO_TASK_NAME, configMINIMAL_STACK_SIZE * 2, NULL, 1, NULL);
+   xTaskCreate(send_status_info_task, SEND_STATUS_INFO_TASK_NAME, configMINIMAL_STACK_SIZE * 3, NULL, 1, NULL);
 }
 
 static void schedule_sending_status_info(unsigned int timeout_ms) {
