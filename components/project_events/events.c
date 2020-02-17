@@ -59,3 +59,11 @@ void clear_connected_to_wifi_event() {
 bool is_connected_to_wifi() {
    return xEventGroupGetBits(flags_g) & WIFI_CONNECTED_FLAG;
 }
+
+void save_delete_tcp_server_event() {
+   xEventGroupSetBits(flags_g, DELETE_TCP_SERVER_FLAG);
+}
+
+bool is_tcp_server_to_be_deleted() {
+   return xEventGroupGetBits(flags_g) & DELETE_TCP_SERVER_FLAG;
+}

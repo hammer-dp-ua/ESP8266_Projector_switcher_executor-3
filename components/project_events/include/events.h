@@ -10,6 +10,7 @@
 #define REQUEST_ERROR_OCCURRED_FLAG    (1 << 2)
 #define STATUS_INFO_IS_BEING_SENT_FLAG (1 << 3)
 #define WIFI_CONNECTED_FLAG            (1 << 4)
+#define DELETE_TCP_SERVER_FLAG         (1 << 5)
 
 void init_events();
 void save_being_updated_event();
@@ -25,5 +26,7 @@ void save_first_status_info_sent_event();
 void save_connected_to_wifi_event();
 void clear_connected_to_wifi_event();
 bool is_connected_to_wifi();
+void save_delete_tcp_server_event();
+bool is_tcp_server_to_be_deleted();
 
 #endif //SHUTTERS_EVENTS_H

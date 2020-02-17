@@ -94,20 +94,18 @@ static void blink_both_leds_cb() {
    }
 }
 
-static void init_both_leds_blinking_timer() {
+static void start_both_leds_blinking(unsigned int ms) {
    esp_timer_create_args_t timer_config = {
          .callback = &blink_both_leds_cb
    };
 
    ESP_ERROR_CHECK(esp_timer_create(&timer_config, &blink_both_leds_timer_g))
-}
-
-static void start_both_leds_blinking(unsigned int ms) {
    ESP_ERROR_CHECK(esp_timer_start_periodic(blink_both_leds_timer_g, ms * 1000))
 }
 
 static void stop_both_leds_blinking() {
    ESP_ERROR_CHECK(esp_timer_stop(blink_both_leds_timer_g))
+   ESP_ERROR_CHECK(esp_timer_delete(blink_both_leds_timer_g))
 
    gpio_set_level(AP_CONNECTION_STATUS_LED_PIN, 0);
    gpio_set_level(SERVER_AVAILABILITY_STATUS_LED_PIN, 0);
@@ -234,8 +232,8 @@ void send_status_info_task() {
    }
 
    const char *request_payload_template_parameters[] =
-         {signal_strength, DEVICE_NAME, errors_counter, pending_connection_errors_counter, uptime, build_timestamp, free_heap_space,
-          reset_reason, system_restart_reason, NULL};
+         {signal_strength, DEVICE_NAME, errors_counter, pending_connection_errors_counter, uptime, build_timestamp,
+          free_heap_space, reset_reason, system_restart_reason, NULL};
    char *request_payload = set_string_parameters(STATUS_INFO_REQUEST_PAYLOAD_TEMPLATE, request_payload_template_parameters);
 
    #ifdef ALLOW_USE_PRINTF
@@ -278,15 +276,12 @@ void send_status_info_task() {
 
          if (strstr(response, UPDATE_FIRMWARE)) {
             save_being_updated_event();
-            start_both_leds_blinking(200);
 
             SYSTEM_RESTART_REASON_TYPE reason = SOFTWARE_UPGRADE;
             rtc_mem_write(SYSTEM_RESTART_REASON_TYPE_RTC_ADDRESS, &reason, 4);
 
-            // TCP server task will be deleted
-            close_opened_sockets();
-
-            update_firmware();
+            delete_tcp_server();
+            update_firmware(AP_CONNECTION_STATUS_LED_PIN, SERVER_AVAILABILITY_STATUS_LED_PIN);
          }
       } else {
          on_response_error();
@@ -355,9 +350,21 @@ static void process_request_and_send_response(char *request, int socket) {
    }
 }
 
+static void close_tcp_server_sockets() {
+   shutdown_and_close_socket(opened_sockets_g[0]);
+   opened_sockets_g[0] = -1;
+   shutdown_and_close_socket(opened_sockets_g[1]);
+   opened_sockets_g[1] = -1;
+}
+
+static void delete_tcp_server() {
+   save_delete_tcp_server_event();
+   close_tcp_server_sockets();
+}
+
 static void tcp_server_task() {
    while (true) {
-      if (is_being_updated()) {
+      if (is_tcp_server_to_be_deleted()) {
          // If some request is receipted during update
          #ifdef ALLOW_USE_PRINTF
          printf("tcp_server_task is to be removed\n");
@@ -439,7 +446,7 @@ static void tcp_server_task() {
       // Blocks here until a request
       int accept_socket = accept(listen_socket, (struct sockaddr *) &client_addr, &addr_len);
 
-      if (is_being_updated()) {
+      if (is_tcp_server_to_be_deleted()) {
          continue;
       }
 
@@ -497,7 +504,7 @@ static void tcp_server_task() {
       printf("Shutting down sockets %d and %d, restarting...\n", accept_socket, listen_socket);
       #endif
 
-      close_opened_sockets();
+      close_tcp_server_sockets();
       repetitive_tcp_server_errors_counter_g = 0;
    }
 }
@@ -515,13 +522,6 @@ static void pins_config() {
    gpio_set_level(AP_CONNECTION_STATUS_LED_PIN, 0);
    gpio_set_level(SERVER_AVAILABILITY_STATUS_LED_PIN, 0);
    gpio_set_level(PROJECTOR_RELAY_PIN, 0);
-}
-
-static void close_opened_sockets() {
-   shutdown_and_close_socket(opened_sockets_g[0]);
-   opened_sockets_g[0] = -1;
-   shutdown_and_close_socket(opened_sockets_g[1]);
-   opened_sockets_g[1] = -1;
 }
 
 void on_wifi_connected_task() {
@@ -544,7 +544,7 @@ void on_wifi_disconnected_task() {
    gpio_set_level(SERVER_AVAILABILITY_STATUS_LED_PIN, 0);
 
    vTaskDelete(tcp_server_task_g);
-   close_opened_sockets();
+   delete_tcp_server();
 
    vTaskDelete(NULL);
 }
@@ -627,7 +627,6 @@ void app_main(void) {
 
    init_events();
 
-   init_both_leds_blinking_timer();
    start_both_leds_blinking(100);
    vTaskDelay(5000 / portTICK_PERIOD_MS);
    stop_both_leds_blinking();
