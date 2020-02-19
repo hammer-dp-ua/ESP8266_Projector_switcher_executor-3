@@ -58,6 +58,7 @@ const char UPDATE_FIRMWARE[] = "\"updateFirmware\":true";
 static void stop_both_leds_blinking();
 static void delete_tcp_server();
 static void start_both_leds_blinking(unsigned int ms);
+static void tcp_server_task();
 
 #endif
 

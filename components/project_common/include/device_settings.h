@@ -1,8 +1,9 @@
 #ifndef DEVICE_SETTINGS
 #define DEVICE_SETTINGS
 
-#define ENTRANCE_PROJECTORS
-//#define STOREHOUSE_PROJECTOR
+// Only 1 is required
+//#define ENTRANCE_PROJECTORS
+#define STOREHOUSE_PROJECTOR
 //#define TESTING
 
 // const are saved at 40200000h (flash memory)
